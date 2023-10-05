@@ -6,3 +6,5 @@
 .Xil/
 *.jou
 *.str
+local_notes.txt
+*.xpr
