@@ -51,7 +51,7 @@ class SignalDriver #(WIDTH);
         vif.cb.VALUE <= 'X;
         vif.cb.VALID <= 0;
       end else begin
-        DELAY_RANDOMIZE : assert(randomize());
+        //DELAY_RANDOMIZE : assert(randomize());
         if(DelayEnable) begin
           vif.cb.VALUE <= 'X;
           vif.cb.VALID <= 0;

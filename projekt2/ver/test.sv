@@ -12,7 +12,7 @@ import match_package::*;
 
 
 
-program TEST (
+module TEST (
   input logic CLK,
   output logic RESET,
   InputSignal.test RX,
@@ -83,7 +83,9 @@ program TEST (
     $write("= TEST2: Random rules only\n");
     $write("============================================================\n");
     repeat(TRANSACTIONS) begin
-      TEST2_RANDOMIZE : assert(std::randomize(random_key));
+      for (int i = 0; i < KEY_WIDTH; i++)
+        random_key[i] = $urandom_range(2);
+      //TEST2_RANDOMIZE : assert(std::randomize(random_key));
       score.put(random_key);
     end
     wait(!score.running());
@@ -98,8 +100,10 @@ program TEST (
     repeat(TRANSACTIONS) begin
       if($urandom_range(1024) < 1024*TEST3_FORCE_RATIO)
         key = model.get_random_key();
-      else
-        TEST3_RANDOMIZE : assert(std::randomize(key));
+      else 
+        for (int i = 0; i < KEY_WIDTH; i++)
+          key[i] = $urandom_range(2);
+        //TEST3_RANDOMIZE : assert(std::randomize(key));
       score.put(key);
     end
     wait(!score.running());
@@ -120,5 +124,5 @@ program TEST (
     $stop();
   end
 
-endprogram
+endmodule
 

@@ -69,7 +69,9 @@ package match_package;
       repeat(N) begin
         d = d + 1;
         do
-          RANDOM_RULE : assert(std::randomize(k));
+          for (int i = 0; i < KEY; i++)
+            k[i] = $urandom_range(2);
+          //RANDOM_RULE : assert(std::randomize(k));
         while(add(k,d) == 0);
       end
     endfunction

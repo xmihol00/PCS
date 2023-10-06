@@ -8,3 +8,5 @@
 *.str
 local_notes.txt
 *.xpr
+work/
+transcript

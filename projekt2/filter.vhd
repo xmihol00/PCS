@@ -174,6 +174,8 @@ begin
     table_select <= '1' when cfg_table = conv_std_logic_vector(t,clog2(TABLES)) else '0'; -- table write enable selection
     write_here <= cfg_write and table_select;
   end generate;
+
+  
   key_memory_register: process(CLK) -- key pipeline to match memory latency
   begin
     if rising_edge(CLK) then
