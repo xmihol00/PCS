@@ -20,12 +20,14 @@ architecture structural of filter is
     subtype   RULE_KEY    is natural range  KEY_WIDTH+DATA_WIDTH downto DATA_WIDTH+1;
     subtype   RULE_DATA   is natural range  DATA_WIDTH downto 1;
     constant  RULE_EMPTY   : natural :=     0;
-    constant  MATCH_FLAGS_EMPTY : std_logic_vector(TABLES-1 downto 0) := (others => '0');
+    constant  MATCH_FLAGS_EMPTY  : std_logic_vector(TABLES-1 downto 0) := (others => '0');
+    constant  MATCH_FLAGS_FILLED : std_logic_vector(KEY_WIDTH-1 downto 0) := (others => '1');
   constant KEY_WORDS : natural := cdiv(KEY_WIDTH, 32); -- hash component operates with 32-bit words
 
   type uint32_array is array (natural range<>) of std_logic_vector(32-1 downto 0);
   type rule_array is array (natural range <>) of std_logic_vector(RULE_WIDTH-1 downto 0);
   type rule_data_array is array (natural range <>) of std_logic_vector(DATA_WIDTH-1 downto 0);
+  type match_flags_array is array (0 to TABLES-1) of std_logic_vector(KEY_WIDTH-1 downto 0);
 
   signal in_key : std_logic_vector(KEY_WORDS*32-1 downto 0) := (others => '0');
   signal in_valid : std_logic;
@@ -49,12 +51,18 @@ architecture structural of filter is
   signal hash_key_regs1 : std_logic_vector(KEY_WIDTH-1 downto 0);
   signal hash_key_regs2 : std_logic_vector(KEY_WIDTH-1 downto 0);
   signal hash_key_regs3 : std_logic_vector(KEY_WIDTH-1 downto 0);
+  signal hash_key_regs4 : std_logic_vector(KEY_WIDTH-1 downto 0);
   signal memory_valid : std_logic_vector(TABLES-1 downto 0);
-  signal memory_valid_regs : std_logic;
+  signal memory_valid_regs1 : std_logic;
+  signal memory_valid_regs2 : std_logic;
 
-  signal match_flags : std_logic_vector(TABLES-1 downto 0);
-  signal match_flags_regs : std_logic_vector(TABLES-1 downto 0);
-  signal memory_rule_data_regs : rule_data_array(0 to TABLES-1);
+  signal match_flags1 : match_flags_array;
+  signal match_flags_regs1 : match_flags_array;
+  signal match_flags2 : std_logic_vector(TABLES-1 downto 0);
+  signal match_flags_regs2 : std_logic_vector(TABLES-1 downto 0);
+  signal memory_rule_data_regs1 : rule_data_array(0 to TABLES-1);
+  signal memory_rule_data_regs2 : rule_data_array(0 to TABLES-1);
+  signal memory_rule_empty_regs : std_logic_vector(TABLES-1 downto 0);
 
 begin
   -- ================================== generic configurations assertions ==================================
@@ -187,48 +195,72 @@ begin
   begin
     if rising_edge(CLK) then
       if RESET = '1' then
+        -- key pipeline to match memory latency of 2 cycles
         hash_key_regs1 <= (others => '0');
         hash_key_regs2 <= (others => '0');
         hash_key_regs3 <= (others => '0');
-        match_flags_regs <= (others => '0');
+        hash_key_regs4 <= (others => '0');
+        match_flags_regs2 <= (others => '0');
         for t in 0 to TABLES-1 loop
-          memory_rule_data_regs(t) <= (others => '0');
+          match_flags_regs1(t) <= (others => '0');
+          memory_rule_data_regs1(t) <= (others => '0');
+          memory_rule_data_regs2(t) <= (others => '0');
         end loop;
-        memory_valid_regs <= '0';
+        memory_valid_regs1 <= '0';
+        memory_valid_regs2 <= '0';
+        memory_rule_empty_regs <= (others => '0');
       else
         hash_key_regs1 <= hash_key; 
         hash_key_regs2 <= hash_key_regs1;
         hash_key_regs3 <= hash_key_regs2;
-        match_flags_regs <= match_flags;
+        hash_key_regs4 <= hash_key_regs3;
+        match_flags_regs1 <= match_flags1;
+        match_flags_regs2 <= match_flags2;
         for t in 0 to TABLES-1 loop
-          memory_rule_data_regs(t) <= memory_rule(t)(RULE_DATA);
+          memory_rule_data_regs1(t) <= memory_rule(t)(RULE_DATA);
+          memory_rule_data_regs2(t) <= memory_rule_data_regs1(t);
+          memory_rule_empty_regs(t) <= memory_rule(t)(RULE_EMPTY);
         end loop;
-        memory_valid_regs <= memory_valid(0);
+        memory_valid_regs1 <= memory_valid(0);
+        memory_valid_regs2 <= memory_valid_regs1;
       end if;
     end if;
   end process;
 
-  match_flags_fill: process(hash_key_regs2, memory_rule)
+  match_flags_stage1: process(hash_key_regs2, memory_rule)
   begin
     for t in 0 to TABLES-1 loop
-      if hash_key_regs2 = memory_rule(t)(RULE_KEY) and memory_rule(t)(RULE_EMPTY) = '0' then
-        match_flags(t) <= '1';
+      for i in 0 to KEY_WIDTH-1 loop
+        if hash_key_regs2(i) = memory_rule(t)(i+DATA_WIDTH+1) then
+          match_flags1(t)(i) <= '1';
+        else
+          match_flags1(t)(i) <= '0';
+        end if;
+      end loop;
+    end loop;
+  end process;
+
+  match_flags_stage2: process(match_flags_regs1, memory_rule_empty_regs)
+  begin
+    for t in 0 to TABLES-1 loop
+      if match_flags_regs1(t) = MATCH_FLAGS_FILLED and memory_rule_empty_regs(t) = '0' then
+        match_flags2(t) <= '1';
       else
-        match_flags(t) <= '0';
+        match_flags2(t) <= '0';
       end if;
     end loop;
   end process;
 
-  out_key_found <= '0' when match_flags_regs = MATCH_FLAGS_EMPTY else '1';
-  out_key <= hash_key_regs3;
-  out_valid <= memory_valid_regs;
+  out_key_found <= '0' when match_flags_regs2 = MATCH_FLAGS_EMPTY else '1';
+  out_key <= hash_key_regs4;
+  out_valid <= memory_valid_regs2;
 
-  out_data_select: process(match_flags_regs, memory_rule_data_regs)
+  out_data_select: process(match_flags_regs2, memory_rule_data_regs2)
   begin
     out_data <= (others => '0');
     for t in 0 to TABLES-1 loop
-      if match_flags_regs(t) = '1' then
-        out_data <= memory_rule_data_regs(t);
+      if match_flags_regs2(t) = '1' then
+        out_data <= memory_rule_data_regs2(t);
       end if;
     end loop;
   end process;
