@@ -17,7 +17,7 @@ use IEEE.std_logic_arith.all;
 entity jenkins_hash is
   generic(
     -- Width of hashed key in 32-bit words.
-    LENGTH          : natural := 1;
+    LENGTH          : natural := 4;
     -- Initialization seed value.
     INITVAL         : std_logic_vector(32-1 downto 0) := X"DEADBABE"
   );
@@ -101,8 +101,7 @@ begin
       OUTPUT_VALID => mix_stage(s+1).valid
     );
   end generate;
-  mix_to_final <= mix_stage(MIX_STAGES); -- output from the last mix stage is input for final
-
+  mix_to_final <= mix_stage(MIX_STAGES);  -- output from the last mix stage is input for final
 
   -- Handle the last 3 words ---------------------------------------------------
   -- initial adding with key words for given length

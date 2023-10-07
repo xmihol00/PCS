@@ -10,3 +10,5 @@ local_notes.txt
 *.xpr
 work/
 transcript
+old_filter.vhd
+vsim.wlf

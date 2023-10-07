@@ -58,22 +58,24 @@ architecture behavioral of jenkins_mix is
   type computation_stage_array is array(natural range <>) of computation_stage;
 
   signal s : computation_stage_array(0 to STAGES);
-  signal s_reg : computation_stage_array(0 to STAGES);
+  signal s_regs : computation_stage_array(0 to STAGES);
 
 begin
 
-  regiser_update: process (CLK)
+  register_update: process (CLK)
   begin
-    if RESET = '1' then
-      for i in 0 to STAGES loop
-        s_reg(i).a <= (others => '0');
-        s_reg(i).b <= (others => '0');
-        s_reg(i).c <= (others => '0');
-        s_reg(i).key <= (others => '0');
-        s_reg(i).valid <= '0';
-      end loop;
-    else
-      s_reg <= s;
+    if rising_edge(CLK) then
+      if RESET = '1' then
+        for i in 0 to STAGES loop
+          s_regs(i).a <= (others => '0');
+          s_regs(i).b <= (others => '0');
+          s_regs(i).c <= (others => '0');
+          s_regs(i).key <= (others => '0');
+          s_regs(i).valid <= '0';
+        end loop;
+      else
+        s_regs <= s;
+      end if;
     end if;
   end process;
 
@@ -85,52 +87,52 @@ begin
   s(0).valid <= INPUT_VALID;
 
   -- Stage 1: a -= c;  a ^= rot(c, 4);  c += b;
-  s(1).a <= (s_reg(0).a - s_reg(0).c) xor rot(s_reg(0).c, 4);
-  s(1).b <= s_reg(0).b;
-  s(1).c <= s_reg(0).c + s_reg(0).b;
-  s(1).key <= s_reg(0).key;
-  s(1).valid <= s_reg(0).valid;
+  s(1).a <= (s_regs(0).a - s_regs(0).c) xor rot(s_regs(0).c, 4);
+  s(1).b <= s_regs(0).b;
+  s(1).c <= s_regs(0).c + s_regs(0).b;
+  s(1).key <= s_regs(0).key;
+  s(1).valid <= s_regs(0).valid;
 
   -- Stage 2: b -= a;  b ^= rot(a, 6);  a += c;
-  s(2).a <= s_reg(1).a + s_reg(1).c;
-  s(2).b <= (s_reg(1).b - s_reg(1).a) xor rot(s_reg(1).a, 6);
-  s(2).c <= s_reg(1).c;
-  s(2).key <= s_reg(1).key;
-  s(2).valid <= s_reg(1).valid;
+  s(2).a <= s_regs(1).a + s_regs(1).c;
+  s(2).b <= (s_regs(1).b - s_regs(1).a) xor rot(s_regs(1).a, 6);
+  s(2).c <= s_regs(1).c;
+  s(2).key <= s_regs(1).key;
+  s(2).valid <= s_regs(1).valid;
 
   -- Stage 3: c -= b;  c ^= rot(b, 8);  b += a;
-  s(3).a <= s_reg(2).a;
-  s(3).b <= s_reg(2).b + s_reg(2).a;
-  s(3).c <= (s_reg(2).c - s_reg(2).b) xor rot(s_reg(2).b, 8);
-  s(3).key <= s_reg(2).key;
-  s(3).valid <= s_reg(2).valid;
+  s(3).a <= s_regs(2).a;
+  s(3).b <= s_regs(2).b + s_regs(2).a;
+  s(3).c <= (s_regs(2).c - s_regs(2).b) xor rot(s_regs(2).b, 8);
+  s(3).key <= s_regs(2).key;
+  s(3).valid <= s_regs(2).valid;
 
   -- Stage 4: a -= c;  a ^= rot(c,16);  c += b;
-  s(4).a <= (s_reg(3).a - s_reg(3).c) xor rot(s_reg(3).c, 16);
-  s(4).b <= s_reg(3).b;
-  s(4).c <= s_reg(3).c + s_reg(3).b;
-  s(4).key <= s_reg(3).key;
-  s(4).valid <= s_reg(3).valid;
+  s(4).a <= (s_regs(3).a - s_regs(3).c) xor rot(s_regs(3).c, 16);
+  s(4).b <= s_regs(3).b;
+  s(4).c <= s_regs(3).c + s_regs(3).b;
+  s(4).key <= s_regs(3).key;
+  s(4).valid <= s_regs(3).valid;
 
   -- Stage 5: b -= a;  b ^= rot(a,19);  a += c;
-  s(5).a <= s_reg(4).a + s_reg(4).c;
-  s(5).b <= (s_reg(4).b - s_reg(4).a) xor rot(s_reg(4).a, 19);
-  s(5).c <= s_reg(4).c;
-  s(5).key <= s_reg(4).key;
-  s(5).valid <= s_reg(4).valid;
+  s(5).a <= s_regs(4).a + s_regs(4).c;
+  s(5).b <= (s_regs(4).b - s_regs(4).a) xor rot(s_regs(4).a, 19);
+  s(5).c <= s_regs(4).c;
+  s(5).key <= s_regs(4).key;
+  s(5).valid <= s_regs(4).valid;
 
   -- Stage 6: c -= b;  c ^= rot(b, 4);  b += a;
-  s(6).a <= s_reg(5).a;
-  s(6).b <= s_reg(5).b + s_reg(5).a;
-  s(6).c <= (s_reg(5).c - s_reg(5).b) xor rot(s_reg(5).b, 4);
-  s(6).key <= s_reg(5).key;
-  s(6).valid <= s_reg(5).valid;
+  s(6).a <= s_regs(5).a;
+  s(6).b <= s_regs(5).b + s_regs(5).a;
+  s(6).c <= (s_regs(5).c - s_regs(5).b) xor rot(s_regs(5).b, 4);
+  s(6).key <= s_regs(5).key;
+  s(6).valid <= s_regs(5).valid;
 
   -- Output connections
-  OUTPUT_A <= s_reg(STAGES).a;
-  OUTPUT_B <= s_reg(STAGES).b;
-  OUTPUT_C <= s_reg(STAGES).c;
-  OUTPUT_KEY <= s_reg(STAGES).key;
-  OUTPUT_VALID <= s_reg(STAGES).valid;
+  OUTPUT_A <= s_regs(STAGES).a;
+  OUTPUT_B <= s_regs(STAGES).b;
+  OUTPUT_C <= s_regs(STAGES).c;
+  OUTPUT_KEY <= s_regs(STAGES).key;
+  OUTPUT_VALID <= s_regs(STAGES).valid;
 
 end architecture;

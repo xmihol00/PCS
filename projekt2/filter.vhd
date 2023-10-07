@@ -20,10 +20,12 @@ architecture structural of filter is
     subtype   RULE_KEY    is natural range  KEY_WIDTH+DATA_WIDTH downto DATA_WIDTH+1;
     subtype   RULE_DATA   is natural range  DATA_WIDTH downto 1;
     constant  RULE_EMPTY   : natural :=     0;
+    constant  MATCH_FLAGS_EMPTY : std_logic_vector(TABLES-1 downto 0) := (others => '0');
   constant KEY_WORDS : natural := cdiv(KEY_WIDTH, 32); -- hash component operates with 32-bit words
 
   type uint32_array is array (natural range<>) of std_logic_vector(32-1 downto 0);
   type rule_array is array (natural range <>) of std_logic_vector(RULE_WIDTH-1 downto 0);
+  type rule_data_array is array (natural range <>) of std_logic_vector(DATA_WIDTH-1 downto 0);
 
   signal in_key : std_logic_vector(KEY_WORDS*32-1 downto 0) := (others => '0');
   signal in_valid : std_logic;
@@ -43,22 +45,26 @@ architecture structural of filter is
   signal hash_valid : std_logic_vector(TABLES-1 downto 0);
 
   signal memory_rule : rule_array(0 to TABLES-1);
-  signal memory_key, memory_key_reg : std_logic_vector(KEY_WIDTH-1 downto 0);
+  signal memory_rule_regs : rule_array(0 to TABLES-1);
+  signal hash_key_regs1 : std_logic_vector(KEY_WIDTH-1 downto 0);
+  signal hash_key_regs2 : std_logic_vector(KEY_WIDTH-1 downto 0);
+  signal hash_key_regs3 : std_logic_vector(KEY_WIDTH-1 downto 0);
   signal memory_valid : std_logic_vector(TABLES-1 downto 0);
+  signal memory_valid_regs : std_logic;
 
   signal match_flags : std_logic_vector(TABLES-1 downto 0);
+  signal match_flags_regs : std_logic_vector(TABLES-1 downto 0);
+  signal memory_rule_data_regs : rule_data_array(0 to TABLES-1);
 
 begin
-
-  -- Unsupported configurations checks -----------------------------------------
+  -- ================================== generic configurations assertions ==================================
   assert KEY_WIDTH > 0 report "FAILURE: Filter key must be at least one bit wide!" severity failure;
   assert DATA_WIDTH > 0 report "FAILURE: Filter data must be at least one bit wide!" severity failure;
   assert TABLES >= 2 report "FAILURE: Filter must have at least two tables to support effective hashing scheme!" severity failure;
   assert TABLE_SIZE > 1 report "FAILURE: Filter table must have multiple items!" severity failure;
   assert 2**clog2(TABLE_SIZE) = TABLE_SIZE report "FAILURE: Filter table must have size that is a power of 2!" severity failure;
 
-
-  -- Registering of entity interfaces ------------------------------------------
+  -- ================================== entity interfaces ==================================
   -- Input interface
   registered_input: if INPUT_REGISTER generate
     input_register: process(CLK)
@@ -77,6 +83,7 @@ begin
     in_key(KEY_WIDTH-1 downto 0) <= INPUT_KEY;
     in_valid <= INPUT_VALID;
   end generate;
+
   -- Output interface
   registered_output: if OUTPUT_REGISTER generate
     output_register: process(CLK)
@@ -98,6 +105,7 @@ begin
     OUTPUT_DATA <= out_data;
     OUTPUT_VALID <= out_valid;
   end generate;
+
   -- Configuration interface
   registered_config: if CONFIG_REGISTER generate
     config_register: process(CLK)
@@ -159,7 +167,7 @@ begin
     generic map (
       ITEM_WIDTH        => RULE_WIDTH,
       ITEMS             => TABLE_SIZE,
-      OUTPUT_REGISTER   => false
+      OUTPUT_REGISTER   => true
     ) port map (
       CLK             => CLK,
       RESET           => RESET,
@@ -174,33 +182,55 @@ begin
     table_select <= '1' when cfg_table = conv_std_logic_vector(t,clog2(TABLES)) else '0'; -- table write enable selection
     write_here <= cfg_write and table_select;
   end generate;
-
   
-  key_memory_register: process(CLK) -- key pipeline to match memory latency
+  register_update: process(CLK)
   begin
     if rising_edge(CLK) then
-      memory_key <= hash_key; -- memory is configured to have one cycle read latecy
-      -- memory_key_reg <= hash_key;
-      -- memory_key <= memory_key_reg;
+      if RESET = '1' then
+        hash_key_regs1 <= (others => '0');
+        hash_key_regs2 <= (others => '0');
+        hash_key_regs3 <= (others => '0');
+        match_flags_regs <= (others => '0');
+        for t in 0 to TABLES-1 loop
+          memory_rule_data_regs(t) <= (others => '0');
+        end loop;
+        memory_valid_regs <= '0';
+      else
+        hash_key_regs1 <= hash_key; 
+        hash_key_regs2 <= hash_key_regs1;
+        hash_key_regs3 <= hash_key_regs2;
+        match_flags_regs <= match_flags;
+        for t in 0 to TABLES-1 loop
+          memory_rule_data_regs(t) <= memory_rule(t)(RULE_DATA);
+        end loop;
+        memory_valid_regs <= memory_valid(0);
+      end if;
     end if;
   end process;
 
-
-  -- Match decoding stage ------------------------------------------------------
-  compare_and_select: process(memory_key, memory_rule)
+  match_flags_fill: process(hash_key_regs2, memory_rule)
   begin
-    out_key_found <= '0';
-    out_data <= (others => 'X');
     for t in 0 to TABLES-1 loop
-      if memory_key = memory_rule(t)(RULE_KEY) then -- main key compares
-        if memory_rule(t)(RULE_EMPTY) = '0' then    -- do not forget to ignore empty rules
-          out_key_found <= '1';
-          out_data <= memory_rule(t)(RULE_DATA);
-        end if;
+      if hash_key_regs2 = memory_rule(t)(RULE_KEY) and memory_rule(t)(RULE_EMPTY) = '0' then
+        match_flags(t) <= '1';
+      else
+        match_flags(t) <= '0';
       end if;
     end loop;
   end process;
-  out_valid <= memory_valid(0); -- select pipelined valid flag from table #0
-  out_key <= memory_key;
+
+  out_key_found <= '0' when match_flags_regs = MATCH_FLAGS_EMPTY else '1';
+  out_key <= hash_key_regs3;
+  out_valid <= memory_valid_regs;
+
+  out_data_select: process(match_flags_regs, memory_rule_data_regs)
+  begin
+    out_data <= (others => '0');
+    for t in 0 to TABLES-1 loop
+      if match_flags_regs(t) = '1' then
+        out_data <= memory_rule_data_regs(t);
+      end if;
+    end loop;
+  end process;
 
 end architecture;
