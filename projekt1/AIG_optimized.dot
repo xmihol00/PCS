@@ -44,14 +44,12 @@ edge [dir = back];
 {
   rank = same;
   Level3;
-  Node_AND6 [label = "AND 6\n", shape = ellipse];
   Node_AND7 [label = "AND 7\n", shape = ellipse];
 }
 
 {
   rank = same;
   Level2;
-  Node_NAND4 [label = "OR 4\n", shape = ellipse];
   Node_AND5 [label = "AND 5\n", shape = ellipse];
 }
 
@@ -79,16 +77,12 @@ Node_AND2 -> Node_b [style = solid];
 Node_AND2 -> Node_d [style = solid];
 Node_NAND3 -> Node_c [style = dotted];
 Node_NAND3 -> Node_d [style = dotted];
-Node_NAND4 -> Node_AND1 [style = dotted];
-Node_NAND4 -> Node_AND2 [style = dotted];
 Node_AND5 -> Node_b [style = solid];
 Node_AND5 -> Node_NAND3 [style = dotted];
-Node_AND6 -> Node_a [style = solid];
-Node_AND6 -> Node_NAND4 [style = dotted];
 Node_AND7 -> Node_a [style = solid];
 Node_AND7 -> Node_AND5 [style = solid];
 Node_tmp1 -> Node_AND1 [style = solid];
-Node_tmp1 -> Node_AND6 [style = solid];
+Node_tmp1 -> Node_AND7 [style = solid];
 Node_AND8 -> Node_tmp1 [style = solid];
 Node_AND8 -> Node_AND5 [style = solid];
 Node_AND9 -> Node_AND2 [style = solid];
