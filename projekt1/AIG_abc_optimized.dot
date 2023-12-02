@@ -1,0 +1,78 @@
+digraph network {
+size = "7.5,10";
+center = true;
+edge [dir = back];
+
+{
+  node [shape = plaintext];
+  edge [style = invis];
+  LevelTitle1 [label=""];
+  LevelTitle2 [label=""];
+  Level5 [label = ""];
+  Level4 [label = ""];
+  Level3 [label = ""];
+  Level2 [label = ""];
+  Level1 [label = ""];
+  Level0 [label = ""];
+  Level5 ->  Level4 ->  Level3 ->  Level2 ->  Level1 ->  Level0;
+}
+
+{
+  rank = same;
+  Level5;
+  Node5 [label = "x", shape = invtriangle, color = coral, fillcolor = coral];
+  Node6 [label = "y", shape = invtriangle, color = coral, fillcolor = coral];
+}
+
+{
+  rank = same;
+  Level4;
+  Node12 [label = "12\n", shape = ellipse];
+}
+
+{
+  rank = same;
+  Level3;
+  Node9 [label = "9\n", shape = ellipse];
+}
+
+{
+  rank = same;
+  Level2;
+  Node8 [label = "8\n", shape = ellipse];
+  Node11 [label = "11\n", shape = ellipse];
+}
+
+{
+  rank = same;
+  Level1;
+  Node7 [label = "7\n", shape = ellipse];
+  Node10 [label = "10\n", shape = ellipse];
+}
+
+{
+  rank = same;
+  Level0;
+  Node1 [label = "a", shape = triangle, color = coral, fillcolor = coral];
+  Node2 [label = "b", shape = triangle, color = coral, fillcolor = coral];
+  Node3 [label = "c", shape = triangle, color = coral, fillcolor = coral];
+  Node4 [label = "d", shape = triangle, color = coral, fillcolor = coral];
+  Node1 -> Node2 -> Node3 -> Node4 [style=invis];
+}
+
+Node5 -> Node6 [style = invis];
+Node5 -> Node8 [style = solid];
+Node6 -> Node12 [style = solid];
+Node7 -> Node1 [style = solid];
+Node7 -> Node2 [style = solid];
+Node8 -> Node3 [style = solid];
+Node8 -> Node7 [style = solid];
+Node9 -> Node4 [style = dotted];
+Node9 -> Node8 [style = dotted];
+Node10 -> Node1 [style = dotted];
+Node10 -> Node2 [style = solid];
+Node11 -> Node4 [style = solid];
+Node11 -> Node10 [style = dotted];
+Node12 -> Node9 [style = dotted];
+Node12 -> Node11 [style = dotted];
+}

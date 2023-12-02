@@ -36,9 +36,9 @@ edge [dir = back];
 {
   rank = same;
   Level4;
-  Node_tmp1 [label = "tmp 1\n", shape = ellipse];
-  Node_AND9 [label = "tmp 2\n", shape = ellipse];
-  Node_NAND9 [label = "tmp 3\n", shape = ellipse];
+  Node_tmp1 [label = "AND 1,6\n", shape = ellipse];
+  Node_AND9 [label = "AND 2,7\n", shape = ellipse];
+  Node_NAND9 [label = "OR 2,7\n", shape = ellipse];
 }
 
 {
