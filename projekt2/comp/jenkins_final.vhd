@@ -42,7 +42,7 @@ end entity;
 architecture behavioral of jenkins_final is
 
   constant STAGES : integer := 7;
-  constant REGS   : integer := 2;
+  constant REGS   : integer := 4;
 
   function rot(x : std_logic_vector(32-1 downto 0); k : natural) return std_logic_vector is
   begin
@@ -76,7 +76,9 @@ begin
         end loop;
       else
         s_regs(0) <= s(0);
-        s_regs(1) <= s(4);
+        s_regs(1) <= s(2);
+        s_regs(2) <= s(4);
+        s_regs(3) <= s(6);
         s_regs(REGS) <= s(STAGES);
       end if;
     end if;
@@ -104,11 +106,11 @@ begin
   s(2).valid <= s(1).valid;
 
   -- Stage 3: b ^= a; b -= rot(a,25);
-  s(3).a <= s(2).a;
-  s(3).b <= (s(2).b xor s(2).a) - rot(s(2).a, 25);
-  s(3).c <= s(2).c;
-  s(3).key <= s(2).key;
-  s(3).valid <= s(2).valid;
+  s(3).a <= s_regs(1).a;
+  s(3).b <= (s_regs(1).b xor s_regs(1).a) - rot(s_regs(1).a, 25);
+  s(3).c <= s_regs(1).c;
+  s(3).key <= s_regs(1).key;
+  s(3).valid <= s_regs(1).valid;
 
   -- Stage 4: c ^= b; c -= rot(b,16);
   s(4).a <= s(3).a;
@@ -118,11 +120,11 @@ begin
   s(4).valid <= s(3).valid;
 
   -- Stage 5: a ^= c; a -= rot(c,4);
-  s(5).a <= (s_regs(1).a xor s_regs(1).c) - rot(s_regs(1).c, 4);
-  s(5).b <= s_regs(1).b;
-  s(5).c <= s_regs(1).c;
-  s(5).key <= s_regs(1).key;
-  s(5).valid <= s_regs(1).valid;
+  s(5).a <= (s_regs(2).a xor s_regs(2).c) - rot(s_regs(2).c, 4);
+  s(5).b <= s_regs(2).b;
+  s(5).c <= s_regs(2).c;
+  s(5).key <= s_regs(2).key;
+  s(5).valid <= s_regs(2).valid;
 
   -- Stage 6: b ^= a; b -= rot(a,14);
   s(6).a <= s(5).a;
@@ -132,11 +134,11 @@ begin
   s(6).valid <= s(5).valid;
 
   -- Stage 7: c ^= b; c -= rot(b,24);
-  s(7).a <= s(6).a;
-  s(7).b <= s(6).b;
-  s(7).c <= (s(6).c xor s(6).b) - rot(s(6).b, 24);
-  s(7).key <= s(6).key;
-  s(7).valid <= s(6).valid;
+  s(7).a <= s_regs(3).a;
+  s(7).b <= s_regs(3).b;
+  s(7).c <= (s_regs(3).c xor s_regs(3).b) - rot(s_regs(3).b, 24);
+  s(7).key <= s_regs(3).key;
+  s(7).valid <= s_regs(3).valid;
 
   -- Output connections
   OUTPUT_A <= s_regs(REGS).a;
