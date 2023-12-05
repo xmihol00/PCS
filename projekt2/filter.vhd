@@ -1,7 +1,7 @@
 -- filter.vhd: Exact match filter for IP addresses using multiple parallel hash tables (architecture)
 -- Copyright (C) 2019 FIT BUT
 -- Author(s): Lukas Kekely <ikekely@fit.vutbr.cz>
---
+--            David Mihola <xmihol00@stud.fit.vutbr.cz>
 -- SPDX-License-Identifier: BSD-3-Clause
 
 
