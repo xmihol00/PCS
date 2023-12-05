@@ -208,6 +208,7 @@ begin
     end if;
   end process;
 
+  -- Match stage -------------------------------------------------------------
   match_flags_fill: process(hash_key_regs2, memory_rule)
   begin
     for t in 0 to TABLES-1 loop
@@ -222,7 +223,8 @@ begin
   out_key_found <= '0' when match_flags_regs = MATCH_FLAGS_EMPTY else '1';
   out_key <= hash_key_regs3;
   out_valid <= memory_valid_regs;
-
+  
+  -- Decoding stage -------------------------------------------------------------
   out_data_select: process(match_flags_regs, memory_rule_data_regs)
   begin
     out_data <= (others => '0');
