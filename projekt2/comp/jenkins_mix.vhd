@@ -42,6 +42,7 @@ end entity;
 architecture behavioral of jenkins_mix is
 
   constant STAGES : integer := 6;
+  constant REGS   : integer := 2;
 
   function rot(x : std_logic_vector(32-1 downto 0); k : natural) return std_logic_vector is
   begin
@@ -58,7 +59,7 @@ architecture behavioral of jenkins_mix is
   type computation_stage_array is array(natural range <>) of computation_stage;
 
   signal s : computation_stage_array(0 to STAGES);
-  signal s_regs : computation_stage_array(0 to STAGES);
+  signal s_regs : computation_stage_array(0 to REGS);
 
 begin
 
@@ -74,7 +75,9 @@ begin
           s_regs(i).valid <= '0';
         end loop;
       else
-        s_regs <= s;
+        s_regs(0) <= s(0);
+        s_regs(1) <= s(3);
+        s_regs(REGS) <= s(STAGES);
       end if;
     end if;
   end process;
@@ -94,39 +97,39 @@ begin
   s(1).valid <= s_regs(0).valid;
 
   -- Stage 2: b -= a;  b ^= rot(a, 6);  a += c;
-  s(2).a <= s_regs(1).a + s_regs(1).c;
-  s(2).b <= (s_regs(1).b - s_regs(1).a) xor rot(s_regs(1).a, 6);
-  s(2).c <= s_regs(1).c;
-  s(2).key <= s_regs(1).key;
-  s(2).valid <= s_regs(1).valid;
+  s(2).a <= s(1).a + s(1).c;
+  s(2).b <= (s(1).b - s(1).a) xor rot(s(1).a, 6);
+  s(2).c <= s(1).c;
+  s(2).key <= s(1).key;
+  s(2).valid <= s(1).valid;
 
   -- Stage 3: c -= b;  c ^= rot(b, 8);  b += a;
-  s(3).a <= s_regs(2).a;
-  s(3).b <= s_regs(2).b + s_regs(2).a;
-  s(3).c <= (s_regs(2).c - s_regs(2).b) xor rot(s_regs(2).b, 8);
-  s(3).key <= s_regs(2).key;
-  s(3).valid <= s_regs(2).valid;
+  s(3).a <= s(2).a;
+  s(3).b <= s(2).b + s(2).a;
+  s(3).c <= (s(2).c - s(2).b) xor rot(s(2).b, 8);
+  s(3).key <= s(2).key;
+  s(3).valid <= s(2).valid;
 
   -- Stage 4: a -= c;  a ^= rot(c,16);  c += b;
-  s(4).a <= (s_regs(3).a - s_regs(3).c) xor rot(s_regs(3).c, 16);
-  s(4).b <= s_regs(3).b;
-  s(4).c <= s_regs(3).c + s_regs(3).b;
-  s(4).key <= s_regs(3).key;
-  s(4).valid <= s_regs(3).valid;
+  s(4).a <= (s_regs(1).a - s_regs(1).c) xor rot(s_regs(1).c, 16);
+  s(4).b <= s_regs(1).b;
+  s(4).c <= s_regs(1).c + s_regs(1).b;
+  s(4).key <= s_regs(1).key;
+  s(4).valid <= s_regs(1).valid;
 
   -- Stage 5: b -= a;  b ^= rot(a,19);  a += c;
-  s(5).a <= s_regs(4).a + s_regs(4).c;
-  s(5).b <= (s_regs(4).b - s_regs(4).a) xor rot(s_regs(4).a, 19);
-  s(5).c <= s_regs(4).c;
-  s(5).key <= s_regs(4).key;
-  s(5).valid <= s_regs(4).valid;
+  s(5).a <= s(4).a + s(4).c;
+  s(5).b <= (s(4).b - s(4).a) xor rot(s(4).a, 19);
+  s(5).c <= s(4).c;
+  s(5).key <= s(4).key;
+  s(5).valid <= s(4).valid;
 
   -- Stage 6: c -= b;  c ^= rot(b, 4);  b += a;
-  s(6).a <= s_regs(5).a;
-  s(6).b <= s_regs(5).b + s_regs(5).a;
-  s(6).c <= (s_regs(5).c - s_regs(5).b) xor rot(s_regs(5).b, 4);
-  s(6).key <= s_regs(5).key;
-  s(6).valid <= s_regs(5).valid;
+  s(6).a <= s(5).a;
+  s(6).b <= s(5).b + s(5).a;
+  s(6).c <= (s(5).c - s(5).b) xor rot(s(5).b, 4);
+  s(6).key <= s(5).key;
+  s(6).valid <= s(5).valid;
 
   -- Output connections
   OUTPUT_A <= s_regs(STAGES).a;
