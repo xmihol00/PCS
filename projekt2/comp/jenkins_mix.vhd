@@ -67,7 +67,7 @@ begin
   begin
     if rising_edge(CLK) then
       if RESET = '1' then
-        for i in 0 to STAGES loop
+        for i in 0 to REGS loop
           s_regs(i).a <= (others => '0');
           s_regs(i).b <= (others => '0');
           s_regs(i).c <= (others => '0');
@@ -76,7 +76,7 @@ begin
         end loop;
       else
         s_regs(0) <= s(0);
-        s_regss(1) <= s(2);
+        s_regs(1) <= s(2);
         s_regs(2) <= s(4);
         s_regs(REGS) <= s(STAGES);
       end if;
@@ -133,10 +133,10 @@ begin
   s(6).valid <= s(5).valid;
 
   -- Output connections
-  OUTPUT_A <= s_regs(STAGES).a;
-  OUTPUT_B <= s_regs(STAGES).b;
-  OUTPUT_C <= s_regs(STAGES).c;
-  OUTPUT_KEY <= s_regs(STAGES).key;
-  OUTPUT_VALID <= s_regs(STAGES).valid;
+  OUTPUT_A <= s_regs(REGS).a;
+  OUTPUT_B <= s_regs(REGS).b;
+  OUTPUT_C <= s_regs(REGS).c;
+  OUTPUT_KEY <= s_regs(REGS).key;
+  OUTPUT_VALID <= s_regs(REGS).valid;
 
 end architecture;

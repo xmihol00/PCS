@@ -12,3 +12,4 @@ work/
 transcript
 old_filter.vhd
 vsim.wlf
+build/
