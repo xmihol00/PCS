@@ -1,3 +1,5 @@
+# run as: make -f path/to/this/Makefile
+
 MAKEFILE_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 CURRENT_DIR = $(shell pwd)
 PROJECT_DIR = $(MAKEFILE_DIR:$(CURRENT_DIR)/%=%)
