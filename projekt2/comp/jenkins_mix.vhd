@@ -42,7 +42,7 @@ end entity;
 architecture behavioral of jenkins_mix is
 
   constant STAGES : integer := 6;
-  constant REGS   : integer := 2;
+  constant REGS   : integer := 3;
 
   function rot(x : std_logic_vector(32-1 downto 0); k : natural) return std_logic_vector is
   begin
@@ -76,7 +76,8 @@ begin
         end loop;
       else
         s_regs(0) <= s(0);
-        s_regs(1) <= s(3);
+        s_regss(1) <= s(2);
+        s_regs(2) <= s(4);
         s_regs(REGS) <= s(STAGES);
       end if;
     end if;
@@ -104,25 +105,25 @@ begin
   s(2).valid <= s(1).valid;
 
   -- Stage 3: c -= b;  c ^= rot(b, 8);  b += a;
-  s(3).a <= s(2).a;
-  s(3).b <= s(2).b + s(2).a;
-  s(3).c <= (s(2).c - s(2).b) xor rot(s(2).b, 8);
-  s(3).key <= s(2).key;
-  s(3).valid <= s(2).valid;
+  s(3).a <= s_regs(1).a;
+  s(3).b <= s_regs(1).b + s_regs(1).a;
+  s(3).c <= (s_regs(1).c - s_regs(1).b) xor rot(s_regs(1).b, 8);
+  s(3).key <= s_regs(1).key;
+  s(3).valid <= s_regs(1).valid;
 
   -- Stage 4: a -= c;  a ^= rot(c,16);  c += b;
-  s(4).a <= (s_regs(1).a - s_regs(1).c) xor rot(s_regs(1).c, 16);
-  s(4).b <= s_regs(1).b;
-  s(4).c <= s_regs(1).c + s_regs(1).b;
-  s(4).key <= s_regs(1).key;
-  s(4).valid <= s_regs(1).valid;
+  s(4).a <= (s(3).a - s(3).c) xor rot(s(3).c, 16);
+  s(4).b <= s(3).b;
+  s(4).c <= s(3).c + s(3).b;
+  s(4).key <= s(3).key;
+  s(4).valid <= s(3).valid;
 
   -- Stage 5: b -= a;  b ^= rot(a,19);  a += c;
-  s(5).a <= s(4).a + s(4).c;
-  s(5).b <= (s(4).b - s(4).a) xor rot(s(4).a, 19);
-  s(5).c <= s(4).c;
-  s(5).key <= s(4).key;
-  s(5).valid <= s(4).valid;
+  s(5).a <= s_regs(2).a + s_regs(2).c;
+  s(5).b <= (s_regs(2).b - s_regs(2).a) xor rot(s_regs(2).a, 19);
+  s(5).c <= s_regs(2).c;
+  s(5).key <= s_regs(2).key;
+  s(5).valid <= s_regs(2).valid;
 
   -- Stage 6: c -= b;  c ^= rot(b, 4);  b += a;
   s(6).a <= s(5).a;
