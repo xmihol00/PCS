@@ -1,7 +1,7 @@
 -- filter.vhd: Exact match filter for IP addresses using multiple parallel hash tables (architecture)
 -- Copyright (C) 2019 FIT BUT
 -- Author(s): Lukas Kekely <ikekely@fit.vutbr.cz>
---
+--            David Mihola <xmihol00@stud.fit.vutbr.cz>
 -- SPDX-License-Identifier: BSD-3-Clause
 
 
@@ -227,6 +227,7 @@ begin
     end if;
   end process;
 
+  -- Match stage 1 -------------------------------------------------------------
   match_flags_stage1: process(hash_key_regs2, memory_rule)
   begin
     for t in 0 to TABLES-1 loop
@@ -239,7 +240,8 @@ begin
       end loop;
     end loop;
   end process;
-
+  
+  -- Match stage 2 -------------------------------------------------------------
   match_flags_stage2: process(match_flags_regs1, memory_rule_empty_regs)
     variable match_flags_tmp : std_logic_vector(TABLES-1 downto 0) := (others => '1');
   begin
@@ -256,6 +258,7 @@ begin
   out_key <= hash_key_regs4;
   out_valid <= memory_valid_regs2;
 
+  -- Decoding stage -------------------------------------------------------------
   out_data_select: process(match_flags_regs2, memory_rule_data_regs2)
   begin
     out_data <= (others => '0');
